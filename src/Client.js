@@ -759,7 +759,7 @@ class Client extends EventEmitter {
             );
         }
         
-        const isBigFile = internalOptions.attachment?.data?.length > (1024 * 1024 * 79);
+        const isBigFile = internalOptions.attachment?.data?.length > (1024 * 1024 * 1);
 
         if (isBigFile) {
             const middle = internalOptions.attachment.data.length / 2;
