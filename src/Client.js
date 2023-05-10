@@ -9,7 +9,6 @@ const InterfaceController = require('./util/InterfaceController');
 const { WhatsWebURL, DefaultOptions, Events, WAState } = require('./util/Constants');
 const { ExposeStore, LoadUtils } = require('./util/Injected');
 const ChatFactory = require('./factories/ChatFactory');
-const { getIndexForVersion } = require('./util/VersionResolver');
 const ContactFactory = require('./factories/ContactFactory');
 const { ClientInfo, Message, MessageMedia, Contact, Location, GroupNotification, Label, Call, Buttons, List, Reaction, Chat } = require('./structures');
 const LegacySessionAuth = require('./authStrategies/LegacySessionAuth');
@@ -116,7 +115,6 @@ class Client extends EventEmitter {
         this.pupPage = page;
 
         await this.authStrategy.afterBrowserInitialized();
-        await this.initVersionOverride();
 
         await page.goto(WhatsWebURL, {
             waitUntil: 'load',
@@ -636,22 +634,6 @@ class Client extends EventEmitter {
                 await this.authStrategy.disconnect();
                 this.emit(Events.DISCONNECTED, 'NAVIGATION');
                 await this.destroy();
-            }
-        });
-    }
-    
-    async initVersionOverride() {
-        const version = this.options.webVersion;
-        await this.pupPage.setRequestInterception(true);
-        this.pupPage.on('request', async (req) => {
-            if(req.url() === WhatsWebURL) {
-                req.respond({
-                    status: 200,
-                    contentType: 'text/html',
-                    body: await getIndexForVersion(version)
-                });
-            } else {
-                req.continue();
             }
         });
     }
