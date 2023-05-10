@@ -124,22 +124,6 @@ class Client extends EventEmitter {
             referer: 'https://whatsapp.com/'
         });
         
-        async initVersionOverride() {
-        const version = this.options.webVersion;
-        await this.pupPage.setRequestInterception(true);
-        this.pupPage.on('request', async (req) => {
-            if(req.url() === WhatsWebURL) {
-                req.respond({
-                    status: 200,
-                    contentType: 'text/html',
-                    body: await getIndexForVersion(version)
-                });
-            } else {
-                req.continue();
-            }
-        });
-    }
-
         await page.evaluate(`function getElementByXpath(path) {
             return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
           }`);
@@ -655,6 +639,17 @@ class Client extends EventEmitter {
             }
         });
     }
+        
+        async initVersionOverride() {
+        const version = this.options.webVersion;
+        await this.pupPage.setRequestInterception(true);
+        this.pupPage.on('request', async (req) => {
+            if(req.url() === WhatsWebURL) {
+                req.respond({
+                    status: 200,
+                    contentType: 'text/html',
+                    body: await getIndexForVersion(version)
+                });
 
     /**
      * Closes the client
