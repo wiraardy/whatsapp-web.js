@@ -37,7 +37,6 @@ exports.ExposeStore = (moduleRaidStr) => {
     window.Store.UserConstructor = window.mR.findModule((module) => (module.default && module.default.prototype && module.default.prototype.isServer && module.default.prototype.isUser) ? module.default : null)[0].default;
     window.Store.Validators = window.mR.findModule('findLinks')[0];
     window.Store.VCard = window.mR.findModule('vcardFromContactModel')[0];
-    window.Store.VCardParse = window.mR.findModule('WA_BIZ_NAME')[0];
     window.Store.WidFactory = window.mR.findModule('createWid')[0];
     window.Store.ProfilePic = window.mR.findModule('profilePicResync')[0];
     window.Store.PresenceUtils = window.mR.findModule('sendPresenceAvailable')[0];
@@ -69,7 +68,20 @@ exports.ExposeStore = (moduleRaidStr) => {
         ...window.mR.findModule('sendExitGroup')[0],
         ...window.mR.findModule('sendSetPicture')[0]
     };
-    
+
+    if (!window.Store.Chat._find) {
+        window.Store.Chat._find = e => {
+            const target = window.Store.Chat.get(e);
+            return target ? Promise.resolve(target) : Promise.resolve({
+                id: e
+            });
+        };
+    }
+
+    // The following was implemented and inspired from wppconnect/wa-js at 
+    // https://github.com/wppconnect-team/wa-js/tree/main/src/chat/functions/prepareMessageButtons.ts
+
+    // Find proxy modules
     window.findProxyModel = (name) => {
         const baseName = name.replace(/Model$/, '');
 
@@ -459,7 +471,7 @@ exports.LoadUtils = () => {
         
         return returnObject;
     }
-    
+
     window.WWebJS.sendMessage = async (chat, content, options = {}) => {
         let attOptions = {};
         if (options.attachment) {
@@ -481,8 +493,8 @@ exports.LoadUtils = () => {
             let quotedMessage = window.Store.Msg.get(options.quotedMessageId);
 
             // TODO remove .canReply() once all clients are updated to >= v2.2241.6
-            const canReply = window.Store.ReplyUtils ?
-                window.Store.ReplyUtils.canReplyMsg(quotedMessage.unsafe()) :
+            const canReply = window.Store.ReplyUtils ? 
+                window.Store.ReplyUtils.canReplyMsg(quotedMessage.unsafe()) : 
                 quotedMessage.canReply();
 
             if (canReply) {
@@ -527,11 +539,11 @@ exports.LoadUtils = () => {
         } else if (options.parseVCards && typeof (content) === 'string' && content.startsWith('BEGIN:VCARD')) {
             delete options.parseVCards;
             try {
-                const parsed = window.Store.VCardParse.parseVcard(content);
+                const parsed = window.Store.VCard.parseVcard(content);
                 if (parsed) {
                     vcardOptions = {
                         type: 'vcard',
-                        vcardFormattedName: window.Store.VCardParse.vcardGetNameFromParsed(parsed)
+                        vcardFormattedName: window.Store.VCard.vcardGetNameFromParsed(parsed)
                     };
                 }
             } catch (_) {
@@ -543,7 +555,7 @@ exports.LoadUtils = () => {
             delete options.linkPreview;
 
             // Not supported yet by WhatsApp Web on MD
-            if(!window.Store.MDBackend) {
+            if (!window.Store.MDBackend) {
                 const link = window.Store.Validators.findLink(content);
                 if (link) {
                     const preview = await window.Store.Wap.queryLinkPreview(link.url);
@@ -555,7 +567,7 @@ exports.LoadUtils = () => {
         }
 
         let buttonOptions = {};
-        if(options.buttons){
+        if (options.buttons) {
             let caption;
             if (options.buttons.type === 'chat') {
                 content = options.buttons.body;
@@ -563,6 +575,7 @@ exports.LoadUtils = () => {
             } else {
                 caption = options.caption ? options.caption : ' '; //Caption can't be empty
             }
+
             buttonOptions = window.WWebJS.prepareMessageButtons(options.buttons);
             buttonOptions = {
                 ...buttonOptions,
@@ -601,7 +614,7 @@ exports.LoadUtils = () => {
         delete options.extraOptions;
 
         const ephemeralFields = window.Store.EphemeralFields.getEphemeralFields(chat);
-
+        
         const message = {
             ...options,
             id: newMsgId,
@@ -617,6 +630,7 @@ exports.LoadUtils = () => {
             ...ephemeralFields,
             ...locationOptions,
             ...attOptions,
+            ...(attOptions.toJSON ? attOptions.toJSON() : {}),
             ...quotedMsgOptions,
             ...vcardOptions,
             ...buttonOptions,
@@ -780,7 +794,7 @@ exports.LoadUtils = () => {
                 res.lastMessage = window.WWebJS.getMessageModel(lastMessage);
             }
         }
-
+        
         delete res.msgs;
         delete res.msgUnsyncedButtonReplyMsgs;
         delete res.unsyncedButtonReplies;
@@ -910,17 +924,17 @@ exports.LoadUtils = () => {
             chatId = window.Store.WidFactory.createWid(chatId);
         }
         switch (state) {
-            case 'typing':
-                await window.Store.ChatState.sendChatStateComposing(chatId);
-                break;
-            case 'recording':
-                await window.Store.ChatState.sendChatStateRecording(chatId);
-                break;
-            case 'stop':
-                await window.Store.ChatState.sendChatStatePaused(chatId);
-                break;
-            default:
-                throw 'Invalid chatstate';
+        case 'typing':
+            await window.Store.ChatState.sendChatStateComposing(chatId);
+            break;
+        case 'recording':
+            await window.Store.ChatState.sendChatStateRecording(chatId);
+            break;
+        case 'stop':
+            await window.Store.ChatState.sendChatStatePaused(chatId);
+            break;
+        default:
+            throw 'Invalid chatstate';
         }
 
         return true;
@@ -979,7 +993,7 @@ exports.LoadUtils = () => {
         ]);
         await window.Store.Socket.deprecatedCastStanza(stanza);
     };
-    
+
     window.WWebJS.cropAndResizeImage = async (media, options = {}) => {
         if (!media.mimetype.includes('image'))
             throw new Error('Media is not an image');
