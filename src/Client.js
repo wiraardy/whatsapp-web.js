@@ -7,9 +7,9 @@ const moduleRaid = require('@pedroslopez/moduleraid/moduleraid');
 const Util = require('./util/Util');
 const InterfaceController = require('./util/InterfaceController');
 const { WhatsWebURL, DefaultOptions, Events, WAState } = require('./util/Constants');
-const { getIndexForVersion } = require('./util/VersionResolver');
 const { ExposeStore, LoadUtils } = require('./util/Injected');
 const ChatFactory = require('./factories/ChatFactory');
+const { getIndexForVersion } = require('./util/VersionResolver');
 const ContactFactory = require('./factories/ContactFactory');
 const { ClientInfo, Message, MessageMedia, Contact, Location, GroupNotification, Label, Call, Buttons, List, Reaction, Chat } = require('./structures');
 const LegacySessionAuth = require('./authStrategies/LegacySessionAuth');
@@ -117,13 +117,13 @@ class Client extends EventEmitter {
 
         await this.authStrategy.afterBrowserInitialized();
         await this.initVersionOverride();
-        
+
         await page.goto(WhatsWebURL, {
             waitUntil: 'load',
             timeout: 0,
             referer: 'https://whatsapp.com/'
         });
-        
+
         await page.evaluate(`function getElementByXpath(path) {
             return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
           }`);
@@ -639,8 +639,8 @@ class Client extends EventEmitter {
             }
         });
     }
-        
-        async initVersionOverride() {
+    
+    async initVersionOverride() {
         const version = this.options.webVersion;
         await this.pupPage.setRequestInterception(true);
         this.pupPage.on('request', async (req) => {
@@ -650,6 +650,11 @@ class Client extends EventEmitter {
                     contentType: 'text/html',
                     body: await getIndexForVersion(version)
                 });
+            } else {
+                req.continue();
+            }
+        });
+    }
 
     /**
      * Closes the client
@@ -800,7 +805,7 @@ class Client extends EventEmitter {
             }
 
             const msg = await window.WWebJS.sendMessage(chat, message, options, sendSeen);
-            return JSON.parse(JSON.stringify(msg));
+            return msg.serialize();
         }, chatId, content, internalOptions, sendSeen);
 
         return new Message(this, newMessage);
