@@ -459,16 +459,7 @@ exports.LoadUtils = () => {
         
         return returnObject;
     }
-
-    if (!window.Store.Chat._find) {
-        window.Store.Chat._find = e => {
-            const target = window.Store.Chat.get(e);
-            return target ? Promise.resolve(target) : Promise.resolve({
-                id: e
-            });
-        };
-    }
-
+    
     window.WWebJS.sendMessage = async (chat, content, options = {}) => {
         let attOptions = {};
         if (options.attachment) {
