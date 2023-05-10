@@ -469,38 +469,6 @@ exports.LoadUtils = () => {
         };
     }
 
-    // TODO remove these once everybody has been updated to WWebJS with legacy sessions removed
-    const _linkPreview = window.mR.findModule('queryLinkPreview');
-    if (_linkPreview && _linkPreview[0] && _linkPreview[0].default) {
-        window.Store.Wap = _linkPreview[0].default;
-    }
-
-    const _isMDBackend = window.mR.findModule('isMDBackend');
-    if(_isMDBackend && _isMDBackend[0] && _isMDBackend[0].isMDBackend) {
-        window.Store.MDBackend = _isMDBackend[0].isMDBackend();
-    } else {
-        window.Store.MDBackend = true;
-    }
-
-    const _features = window.mR.findModule('FEATURE_CHANGE_EVENT')[0];
-    if(_features) {
-        window.Store.Features = _features.LegacyPhoneFeatures;
-    }
-};
-
-exports.LoadUtils = () => {
-    window.WWebJS = {};
-
-    window.WWebJS.sendSeen = async (chatId) => {
-        let chat = window.Store.Chat.get(chatId);
-        if (chat !== undefined) {
-            await window.Store.SendSeen.sendSeen(chat, false);
-            return true;
-        }
-        return false;
-
-    };
-
     window.WWebJS.sendMessage = async (chat, content, options = {}) => {
         let attOptions = {};
         if (options.attachment) {
