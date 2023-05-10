@@ -8,7 +8,7 @@ exports.DefaultOptions = {
         defaultViewport: null
     },
     authTimeoutMs: 0,
-    webVersion: 2.2319.9,
+    webVersion: '2.2319.9',
     qrMaxRetries: 0,
     takeoverOnConflict: false,
     takeoverTimeoutMs: 0,
