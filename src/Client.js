@@ -7,6 +7,7 @@ const moduleRaid = require('@pedroslopez/moduleraid/moduleraid');
 const Util = require('./util/Util');
 const InterfaceController = require('./util/InterfaceController');
 const { WhatsWebURL, DefaultOptions, Events, WAState } = require('./util/Constants');
+const { getIndexForVersion } = require('./util/VersionResolver');
 const { ExposeStore, LoadUtils } = require('./util/Injected');
 const ChatFactory = require('./factories/ChatFactory');
 const ContactFactory = require('./factories/ContactFactory');
@@ -115,12 +116,29 @@ class Client extends EventEmitter {
         this.pupPage = page;
 
         await this.authStrategy.afterBrowserInitialized();
-
+        await this.initVersionOverride();
+        
         await page.goto(WhatsWebURL, {
             waitUntil: 'load',
             timeout: 0,
             referer: 'https://whatsapp.com/'
         });
+        
+        async initVersionOverride() {
+        const version = this.options.webVersion;
+        await this.pupPage.setRequestInterception(true);
+        this.pupPage.on('request', async (req) => {
+            if(req.url() === WhatsWebURL) {
+                req.respond({
+                    status: 200,
+                    contentType: 'text/html',
+                    body: await getIndexForVersion(version)
+                });
+            } else {
+                req.continue();
+            }
+        });
+    }
 
         await page.evaluate(`function getElementByXpath(path) {
             return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;

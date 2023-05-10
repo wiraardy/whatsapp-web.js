@@ -4,10 +4,11 @@ exports.WhatsWebURL = 'https://web.whatsapp.com/';
 
 exports.DefaultOptions = {
     puppeteer: {
-        headless: true,
+        headless: "new",
         defaultViewport: null
     },
     authTimeoutMs: 0,
+    webVersion: 2.2319.9,
     qrMaxRetries: 0,
     takeoverOnConflict: false,
     takeoverTimeoutMs: 0,
